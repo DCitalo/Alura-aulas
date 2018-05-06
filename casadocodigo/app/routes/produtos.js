@@ -1,20 +1,47 @@
 module.exports = function(app) {
-    app.get("/produtos",function(req, res) {
-        var mysql = require('mysql');
-        var connection = mysql.createConnection({
-            host: "localhost",
-            user: "root",
-            password : "$v1r4B4z!7(8]*7", 
-            database: "casadocodigo_nodejs",
-            insecureAuth : true
+    var listaProdutos = function(req, res) {
+        var connection = app.infra.connectionFactory();
+        var produtosDAO = new app.infra.ProdutosDAO(connection);
+        produtosDAO.lista(function(err, resultados){
+            res.format({
+              html: function () {
+                res.render('produtos/lista', {lista: resultados});    
+              },
+              json: function(){
+                res.json(resultados)
+              }
+            });
+            
         });
-
-        connection.query('desc produtos', function(err, results){
-            res.send(results);
-            console.log(err)
-        });
-
         connection.end();
+    };
 
+    app.get("/produtos",listaProdutos);
+
+   app.get('/produtos/form',function(req,res){
+    res.render('produtos/form',
+            {errosValidacao:{}});
+});
+
+    app.post('/produtos',function(req,res){
+
+        var produto = req.body;
+
+        req.assert('titulo','Titulo é obrigatório!').notEmpty();
+        req.assert('preco','Formato inválido').isFloat();
+
+        var erros = req.validationErrors();
+        if(erros){
+            console.log(erros)
+            res.render('produtos/form',{errosValidacao : erros});
+            return;
+        }
+
+        var connection = app.infra.connectionFactory();
+        var produtosDAO = new app.infra.ProdutosDAO(connection);
+        produtosDAO.salva(produto, function(erros,resultados){
+          console.log(erros)
+          res.redirect('/produtos')
+        });
     });
 }
