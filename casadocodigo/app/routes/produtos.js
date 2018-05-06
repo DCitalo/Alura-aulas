@@ -10,8 +10,7 @@ module.exports = function(app) {
               json: function(){
                 res.json(resultados)
               }
-            });
-            
+            });            
         });
         connection.end();
     };
@@ -20,8 +19,8 @@ module.exports = function(app) {
 
    app.get('/produtos/form',function(req,res){
     res.render('produtos/form',
-            {errosValidacao:{}});
-});
+            {errosValidacao:{}, produto:{}});
+    });
 
     app.post('/produtos',function(req,res){
 
@@ -32,8 +31,15 @@ module.exports = function(app) {
 
         var erros = req.validationErrors();
         if(erros){
-            console.log(erros)
-            res.render('produtos/form',{errosValidacao : erros});
+            res.format({
+              html: function () {
+                res.status(400).render('produtos/form' ,{ errosValidacao : erros, produto : produto});    
+              },
+              json: function(){
+                res.status(400).json(erros)
+              }
+            });  
+            
             return;
         }
 
